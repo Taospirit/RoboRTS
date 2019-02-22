@@ -54,7 +54,7 @@ namespace math {
  */
 template<typename T>
 T Normalize(T z) {
-	return std::atan2(std::sin(z), std::cos(z));
+	return std::atan2(std::sin(z), std::cos(z));//将弧度z归一为-π到+π之间
 };
 
 /**
@@ -88,20 +88,20 @@ inline T AngleDiff(T a, T b) {
 Vec3d CoordAdd(const Vec3d &a, const Vec3d &b);
 
 template<typename T>
-inline T RandomGaussianNum(T cov) {
-	T sigma = std::sqrt(std::abs(cov));
+inline T RandomGaussianNum(T cov) {//内联函数
+	T sigma = std::sqrt(std::abs(cov));//用协方差的开方做方差sigma
 	T x1, x2, w, r;
 	do {
 		do {
-			r = drand48();
+			r = drand48();//得到[0,1]的均匀分布
 		} while (r == 0.0);
-		x1 = 2.0 * r - 1.0;
+		x1 = 2.0 * r - 1.0;//x1得到[-1,1]的均匀分布
 		do {
 			r = drand48();
 		} while (r == 0.0);
 		x2 = 2.0 * r - 1.0;
 		w = x1 * x1 + x2 * x2;
-	} while (w > 1.0 || w == 0.0);
+	} while (w > 1.0 || w == 0.0);//舍弃w大于1或者等于0的情况
 	return (sigma * x2 * std::sqrt(-2.0 * std::log(w) / w));
 }
 
@@ -133,7 +133,7 @@ T EuclideanDistance(T x1, T y1, T x2, T y2) {
 }
 
 template<typename T>
-inline bool Near(T num1, T num2, T bound) {
+inline bool Near(T num1, T num2, T bound) {//当n1和n2的欧式距离小于bound时为真，否则为假
 	if (num1 > num2 + bound) {
 		return false;
 	} else if (num1 + bound < num2) {
@@ -163,7 +163,7 @@ inline Mat3d MsgCovarianceToMat3d(const boost::array<double, 36> &msg_cov) {
  * @param matrix_v Eigenvectors in columns of matrix V
  * @param vector_d Eigenvalues in vector d
  */
-void EigenDecomposition(const Mat3d &matrix_a,
+void EigenDecomposition(const Mat3d &matrix_a,//特征值分解
 						Mat3d &matrix_v,
 						Vec3d &vector_d);
 

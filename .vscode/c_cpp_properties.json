@@ -1,0 +1,21 @@
+{
+    "configurations": [
+        {
+            "browse": {
+                "databaseFilename": "",
+                "limitSymbolsToIncludedHeaders": true
+            },
+            "includePath": [
+                "/home/lintao/pibot_ros/ros_ws/devel/include",
+                "/home/lintao/ros_ws/robots_ws/devel/include",
+                "/opt/ros/kinetic/include",
+                "/home/lintao/ros_ws/robots_ws/src/RoboRTS/roborts_common/include",
+                "/home/lintao/ros_ws/robots_ws/src/RoboRTS/roborts_costmap/include",
+                "/usr/include"
+            ],
+            "name": "Linux",
+            "intelliSenseMode": "gcc-x64"
+        }
+    ],
+    "version": 4
+}
