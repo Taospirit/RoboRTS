@@ -46,7 +46,7 @@ bool LocalizationNode::Init() {
   transform_tolerance_  = ros::Duration(localization_config.transform_tolerance);
   publish_visualize_ = localization_config.publish_visualize;
 
-  tf_broadcaster_ptr_ = std::make_unique<tf::TransformBroadcaster>();
+  tf_broadcaster_ptr_ = std::make_unique<tf::TransformBroadcaster>();//make_unique智能指针，c++14标准
   tf_listener_ptr_ = std::make_unique<tf::TransformListener>();
 
   distance_map_pub_ = nh_.advertise<nav_msgs::OccupancyGrid>("distance_map", 1, true);
@@ -62,13 +62,13 @@ bool LocalizationNode::Init() {
 
   initial_pose_sub_ = nh_.subscribe("initialpose", 2, &LocalizationNode::InitialPoseCallback, this);
   pose_pub_ = nh_.advertise<geometry_msgs::PoseStamped>("amcl_pose", 2, true);
-
+  //构建amcl对象病初始化
   amcl_ptr_= std::make_unique<Amcl>();
   amcl_ptr_->GetParamFromRos(&nh_);
   amcl_ptr_->Init(init_pose_, init_cov_);
 
-  map_init_ = GetStaticMap();
-  laser_init_ = GetLaserPose();
+  map_init_ = GetStaticMap();//获取静态地图,bool型
+  laser_init_ = GetLaserPose();//获取雷达位置,bool型
 
   return map_init_&&laser_init_;
 }
@@ -78,7 +78,7 @@ bool LocalizationNode::GetStaticMap(){
   ros::service::waitForService("static_map", -1);
   nav_msgs::GetMap::Request req;
   nav_msgs::GetMap::Response res;
-  if(static_map_srv_.call(req,res)) {
+  if(static_map_srv_.call(req,res)) {//成功获取静态地图
     LOG_INFO << "Received Static Map";
     amcl_ptr_->HandleMapMessage(res.map, init_pose_, init_cov_);
     first_map_received_ = true;
@@ -92,7 +92,7 @@ bool LocalizationNode::GetStaticMap(){
 bool LocalizationNode::GetLaserPose() {
   auto laser_scan_msg = ros::topic::waitForMessage<sensor_msgs::LaserScan>(laser_topic_);
 
-  Vec3d laser_pose;
+  Vec3d laser_pose;//雷达位置，3维向量?
   laser_pose.setZero();
   GetPoseFromTf(base_frame_, laser_scan_msg->header.frame_id, ros::Time(), laser_pose);
   laser_pose[2] = 0; // No need for rotation, or will be error
@@ -101,7 +101,7 @@ bool LocalizationNode::GetLaserPose() {
             laser_pose[1] << ", " <<
             laser_pose[2];
 
-  amcl_ptr_->SetLaserSensorPose(laser_pose);
+  amcl_ptr_->SetLaserSensorPose(laser_pose);//amcl获取雷达位置
   return true;
 }
 
