@@ -35,7 +35,7 @@ bool LocalizationNode::Init() {
   base_frame_   = std::move(localization_config.base_frame_id);
 
   laser_topic_ = std::move(localization_config.laser_topic_name);
-
+  //初始化位姿和协方差
   init_pose_ = {localization_config.initial_pose_x,
                 localization_config.initial_pose_y,
                 localization_config.initial_pose_a};
@@ -62,25 +62,25 @@ bool LocalizationNode::Init() {
 
   initial_pose_sub_ = nh_.subscribe("initialpose", 2, &LocalizationNode::InitialPoseCallback, this);
   pose_pub_ = nh_.advertise<geometry_msgs::PoseStamped>("amcl_pose", 2, true);
-
+  //amcl实例化对象并获取参数和初始化位置、协方差。
   amcl_ptr_= std::make_unique<Amcl>();
-  amcl_ptr_->GetParamFromRos(&nh_);
-  amcl_ptr_->Init(init_pose_, init_cov_);
+  amcl_ptr_->GetParamFromRos(&nh_);//amcl调用GetParamFromRos方法
+  amcl_ptr_->Init(init_pose_, init_cov_);//amcl调用Init()方法
 
-  map_init_ = GetStaticMap();
-  laser_init_ = GetLaserPose();
+  map_init_ = GetStaticMap();//获取静态地图信息，实现如下
+  laser_init_ = GetLaserPose();//获取激光雷达位置，实现如下
 
-  return map_init_&&laser_init_;
+  return map_init_&&laser_init_;//地图和雷达信息均获取则返回真
 }
 
-bool LocalizationNode::GetStaticMap(){
+bool LocalizationNode::GetStaticMap(){//获取static_map给amcl,line70被调用
   static_map_srv_ = nh_.serviceClient<nav_msgs::GetMap>("static_map");
   ros::service::waitForService("static_map", -1);
   nav_msgs::GetMap::Request req;
   nav_msgs::GetMap::Response res;
-  if(static_map_srv_.call(req,res)) {
+  if(static_map_srv_.call(req,res)) {//成功得到静态地图
     LOG_INFO << "Received Static Map";
-    amcl_ptr_->HandleMapMessage(res.map, init_pose_, init_cov_);
+    amcl_ptr_->HandleMapMessage(res.map, init_pose_, init_cov_);//amcl调用HandleMapMessage()方法
     first_map_received_ = true;
     return true;
   } else{
@@ -89,23 +89,23 @@ bool LocalizationNode::GetStaticMap(){
   }
 }
 
-bool LocalizationNode::GetLaserPose() {
+bool LocalizationNode::GetLaserPose() {//获取laser_pose给amcl,line71被调用
   auto laser_scan_msg = ros::topic::waitForMessage<sensor_msgs::LaserScan>(laser_topic_);
 
   Vec3d laser_pose;
   laser_pose.setZero();
-  GetPoseFromTf(base_frame_, laser_scan_msg->header.frame_id, ros::Time(), laser_pose);
+  GetPoseFromTf(base_frame_, laser_scan_msg->header.frame_id, ros::Time(), laser_pose);//实现在line164,从laser_scan到base_frame
   laser_pose[2] = 0; // No need for rotation, or will be error
   DLOG_INFO << "Received laser's pose wrt robot: "<<
             laser_pose[0] << ", " <<
             laser_pose[1] << ", " <<
             laser_pose[2];
 
-  amcl_ptr_->SetLaserSensorPose(laser_pose);
+  amcl_ptr_->SetLaserSensorPose(laser_pose);//amcl调用SetLaserSensorPose()
   return true;
 }
 
-void LocalizationNode::InitialPoseCallback(const geometry_msgs::PoseWithCovarianceStamped::ConstPtr &init_pose_msg) {
+void LocalizationNode::InitialPoseCallback(const geometry_msgs::PoseWithCovarianceStamped::ConstPtr &init_pose_msg) {//位置回调函数
 
   if (init_pose_msg->header.frame_id == "") {
     LOG_WARNING << "Received initial pose with empty frame_id.";
@@ -137,12 +137,12 @@ void LocalizationNode::InitialPoseCallback(const geometry_msgs::PoseWithCovarian
                                       odom_frame_, tx_odom);
   }
   catch (tf::TransformException &e) {
-    tx_odom.setIdentity();
+    tx_odom.setIdentity();//异常时tx_odom设置为单位矩阵
   }
   tf::Pose pose_new;
   tf::Pose pose_old;
   tf::poseMsgToTF(init_pose_msg->pose.pose, pose_old);
-  pose_new = pose_old * tx_odom;
+  pose_new = pose_old * tx_odom;//t时刻为pose_old,t+1时刻为pose_new，用tx_odom更新
 
   // Transform into the global frame
   DLOG_INFO << "Setting pose " << ros::Time::now().toSec() << ", "
@@ -159,10 +159,10 @@ void LocalizationNode::InitialPoseCallback(const geometry_msgs::PoseWithCovarian
   init_pose_mean(2) = yaw;
   init_pose_cov = math::MsgCovarianceToMat3d(init_pose_msg->pose.covariance);
 
-  amcl_ptr_->HandleInitialPoseMessage(init_pose_mean, init_pose_cov);
+  amcl_ptr_->HandleInitialPoseMessage(init_pose_mean, init_pose_cov);//获取init_pose_mean和init_pose_cov给amcl
 }
 
-void LocalizationNode::LaserScanCallback(const sensor_msgs::LaserScan::ConstPtr &laser_scan_msg_ptr){
+void LocalizationNode::LaserScanCallback(const sensor_msgs::LaserScan::ConstPtr &laser_scan_msg_ptr){//回调函数
 
   last_laser_msg_timestamp_ = laser_scan_msg_ptr->header.stamp;
 
@@ -192,7 +192,7 @@ void LocalizationNode::LaserScanCallback(const sensor_msgs::LaserScan::ConstPtr 
 
 }
 
-void LocalizationNode::PublishVisualize(){
+void LocalizationNode::PublishVisualize(){//line190被调用
 
   if(pose_pub_.getNumSubscribers() > 0){
     pose_msg_.header.stamp = ros::Time::now();
@@ -261,10 +261,10 @@ bool LocalizationNode::PublishTf() {
   }
 }
 
-bool LocalizationNode::GetPoseFromTf(const std::string &target_frame,
+bool LocalizationNode::GetPoseFromTf(const std::string &target_frame,//获取source_frame_pose在地图的位置,line97被调用
                    const std::string &source_frame,
-                   const ros::Time &timestamp,
-                   Vec3d &pose)
+                   const ros::Time &timestamp,//从source转换到target
+                   Vec3d &pose)//函数说明：
 {
   tf::Stamped<tf::Pose> ident(tf::Transform(tf::createIdentityQuaternion(),
                                             tf::Vector3(0, 0, 0)),
@@ -274,8 +274,8 @@ bool LocalizationNode::GetPoseFromTf(const std::string &target_frame,
   try {
     this->tf_listener_ptr_->transformPose(target_frame,
                                           ident,
-                                          pose_stamp);
-  } catch (tf::TransformException &e) {
+                                          pose_stamp);//写入pose_stamp
+  } catch (tf::TransformException &e) {//异常处理
     LOG_ERROR << "Couldn't transform from "
               << source_frame
               << "to "
@@ -283,7 +283,7 @@ bool LocalizationNode::GetPoseFromTf(const std::string &target_frame,
     return false;
   }
 
-  pose.setZero();
+  pose.setZero();//pose=[x,y,theta]，应该是source_frame在t时刻在地图的位置
   pose[0] = pose_stamp.getOrigin().x();
   pose[1] = pose_stamp.getOrigin().y();
   double yaw,pitch, roll;
