@@ -338,6 +338,6 @@ int main(int argc, char **argv) {
   ros::AsyncSpinner async_spinner(THREAD_NUM);
   async_spinner.start();
   ros::waitForShutdown();
-  return 0;
+  return 0;//
 }
 
