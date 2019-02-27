@@ -42,7 +42,7 @@ namespace roborts_localization {
 
 std::vector<std::pair<int, int> > Amcl::free_space_indices;
 
-void Amcl::Init(const Vec3d &init_pose, const Vec3d &init_cov) {
+void Amcl::Init(const Vec3d &init_pose, const Vec3d &init_cov) {//初始化函数-2
 
   d_thresh_ = amcl_param_.update_min_d;
   a_thresh_ = amcl_param_.update_min_a;
@@ -57,37 +57,37 @@ void Amcl::Init(const Vec3d &init_pose, const Vec3d &init_cov) {
   use_global_localization_ = amcl_param_.use_global_localization;
   random_heading_ = amcl_param_.random_heading;
 
-  UpdatePoseFromParam(init_pose, init_cov);
+  UpdatePoseFromParam(init_pose, init_cov);//line161实现，将init_pose和Init_cov的数据更新给init_pose_和init_cov_。
 
-  cloud_pub_interval_.fromSec(1.0);
+  cloud_pub_interval_.fromSec(1.0);//时间处理
 
   LOG_INFO << "Amcl Init!";
 
 }
 
-Amcl::~Amcl() {
-  Reset();
+Amcl::~Amcl() {//重置
+  Reset();//line78实现
   LOG_INFO << "Delete Amcl";
 }
 
-void Amcl::GetParamFromRos(ros::NodeHandle *nh) {
-  amcl_param_.GetParam(nh);
+void Amcl::GetParamFromRos(ros::NodeHandle *nh) {//从ros中获得参数，在主节点初始化时被调用-1。
+  amcl_param_.GetParam(nh);//amcl_config.h中配置
   CHECK_GT(amcl_param_.laser_likelihood_max_dist, 0);
 }
 
-void Amcl::Reset() {
-  if (map_ptr_ != nullptr) {
+void Amcl::Reset() {//重置函数实现
+  if (map_ptr_ != nullptr) {//map_ptr指针重置
     map_ptr_.reset();
   }
-  if (pf_ptr_ != nullptr) {
+  if (pf_ptr_ != nullptr) {//pf_ptr指针重置
     pf_ptr_.reset();
   }
 }
 
-void Amcl::HandleMapMessage(const nav_msgs::OccupancyGrid &map_msg, const Vec3d &init_pose, const Vec3d &init_cov) {
+void Amcl::HandleMapMessage(const nav_msgs::OccupancyGrid &map_msg, const Vec3d &init_pose, const Vec3d &init_cov) {//处理地图信息-3
   Reset();
   map_ptr_.reset(new AmclMap());
-  map_ptr_->ConvertFromMsg(map_msg);
+  map_ptr_->ConvertFromMsg(map_msg);//均在amcl_map.h中定义和声明
 
   // Index of free space
   Amcl::free_space_indices.resize(0);
@@ -107,7 +107,7 @@ void Amcl::HandleMapMessage(const nav_msgs::OccupancyGrid &map_msg, const Vec3d 
                                    map_ptr_));
   pf_ptr_->SetKldParam(amcl_param_.kld_err, amcl_param_.kld_z);
 
-  UpdatePoseFromParam(init_pose, init_cov);
+  UpdatePoseFromParam(init_pose, init_cov);//从init_pose和init_cov中更新参数
 
   Vec3d pf_init_pose_mean;
   Mat3d pf_init_pose_cov;
@@ -143,12 +143,12 @@ void Amcl::HandleMapMessage(const nav_msgs::OccupancyGrid &map_msg, const Vec3d 
   LOG_INFO << "Done initializing likelihood field model.";
 
   if (use_global_localization_) {
-    GlobalLocalization();
+    GlobalLocalization();//line234实现
   } else {
     if (random_heading_) {
-      RandomHeadingGlobalLocalization();
+      RandomHeadingGlobalLocalization();//line248实现
     } else {
-      ApplyInitPose();
+      ApplyInitPose();//line211实现
     }
   }
 
@@ -158,14 +158,14 @@ const nav_msgs::OccupancyGrid &Amcl::GetDistanceMapMsg() {
   return map_ptr_->ConvertDistanMaptoMapMsg();
 }
 
-void Amcl::UpdatePoseFromParam(const Vec3d &init_pose, const Vec3d &init_cov) {
+void Amcl::UpdatePoseFromParam(const Vec3d &init_pose, const Vec3d &init_cov) {//line60\110被调用
   init_pose_[0] = 0.0;
   init_pose_[1] = 0.0;
   init_pose_[2] = 0.0;
   init_cov_[0] = 0.5 * 0.5;
   init_cov_[1] = 0.5 * 0.5;
   init_cov_[2] = (M_PI / 12.0) * (M_PI / 12.0);
-
+  //init_pose和init_cov数据检测，当分量为数时赋值，否则输出警告
   if (!std::isnan(init_pose[0])) {
     init_pose_[0] = init_pose[0];
   } else {
@@ -197,7 +197,7 @@ void Amcl::UpdatePoseFromParam(const Vec3d &init_pose, const Vec3d &init_cov) {
     LOG_WARNING << "ignoring NAN in initial covariance AA";
   }
 
-  DLOG_INFO << "Updated init pose " << init_pose_;
+  DLOG_INFO << "Updated init pose " << init_pose_;//更新完毕
 }
 
 void Amcl::HandleInitialPoseMessage(Vec3d pf_init_pose_mean,

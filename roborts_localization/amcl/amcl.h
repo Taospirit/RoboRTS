@@ -61,7 +61,7 @@ namespace roborts_localization {
 /**
  * @brief Pose hypothesis type in localization module
  */
-class HypPose {
+class HypPose {//假设位置类
  public:
   //! Mean of pose esimate
   Vec3d pose_mean;
@@ -72,20 +72,20 @@ class HypPose {
 /**
  * @brief Pose hypothesis type in Amcl
  */
-class AmclHyp {
+class AmclHyp {//amcl中的假设位置
  public:
   //! Total weight (weights sum to 1)
-  double weight;
+  double weight;//权重
   //! Mean of pose esimate
-  Vec3d pf_pose_mean;
+  Vec3d pf_pose_mean;//位置估计的均值
   //! Covariance of pose estimate
-  Mat3d pf_pose_cov;
+  Mat3d pf_pose_cov;//位置估计的协方差
 };
 
 /**
  * @brief Amcl algorithm wrapping from ROS-Navigation
  */
-class Amcl {
+class Amcl {//从ros导航包中的amcl算法
  public:
 
   /**
@@ -96,7 +96,7 @@ class Amcl {
   /**
    * @brief Amcl destructor.
    */
-  ~Amcl();
+  ~Amcl();//amcl重构
 
   void GetParamFromRos(ros::NodeHandle *nh);
 

@@ -67,8 +67,8 @@ bool LocalizationNode::Init() {
   amcl_ptr_->GetParamFromRos(&nh_);//amcl调用GetParamFromRos方法
   amcl_ptr_->Init(init_pose_, init_cov_);//amcl调用Init()方法
 
-  map_init_ = GetStaticMap();//获取静态地图信息，实现如下
-  laser_init_ = GetLaserPose();//获取激光雷达位置，实现如下
+  map_init_ = GetStaticMap();//获取静态地图信息，line76实现
+  laser_init_ = GetLaserPose();//获取激光雷达位置，line92实现
 
   return map_init_&&laser_init_;//地图和雷达信息均获取则返回真
 }
